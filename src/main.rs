@@ -1,19 +1,26 @@
+mod action;
 mod cli;
+mod config;
 mod fum;
-mod state;
 mod meta;
+mod regexes;
+mod state;
+mod text;
 mod ui;
 mod utils;
-mod text;
 mod widget;
-mod config;
-mod action;
-mod regexes;
+mod youtube;
 
 use fum::{Fum, FumResult};
 
 fn main() -> FumResult<()> {
     let config = cli::run()?;
+
+    if config.authorize {
+        youtube::authorize();
+        return Ok(());
+    }
+
     let mut fum = Fum::new(&config)?;
 
     fum.run()?;

@@ -1,10 +1,19 @@
-use std::{collections::HashMap, fs, path::PathBuf};
 use ratatui::style::Color;
 use serde::Deserialize;
+use std::{collections::HashMap, fs, path::PathBuf};
 
-use crate::{action::Action, fum::FumResult, widget::{ContainerFlex, Direction, FumWidget}};
+use crate::{
+    action::Action,
+    fum::FumResult,
+    widget::{ContainerFlex, Direction, FumWidget},
+};
 
-use super::{defaults::{align, bg, direction, fg, flex, height, keybinds, layout, players, use_active_player, width}, keybind::Keybind};
+use super::{
+    defaults::{
+        align, bg, direction, fg, flex, height, keybinds, layout, players, use_active_player, width,
+    },
+    keybind::Keybind,
+};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -27,15 +36,15 @@ pub enum Align {
 impl Align {
     pub fn from_str(str: &str) -> Option<Self> {
         match str {
-            "center"        => Some(Self::Center),
-            "top"           => Some(Self::Top),
-            "left"          => Some(Self::Left),
-            "bottom"        => Some(Self::Bottom),
-            "top-left"      => Some(Self::TopLeft),
-            "top-right"     => Some(Self::TopRight),
-            "bottom-left"   => Some(Self::BottomLeft),
-            "bottom-right"  => Some(Self::BottomRight),
-            _               => None
+            "center" => Some(Self::Center),
+            "top" => Some(Self::Top),
+            "left" => Some(Self::Left),
+            "bottom" => Some(Self::Bottom),
+            "top-left" => Some(Self::TopLeft),
+            "top-right" => Some(Self::TopRight),
+            "bottom-left" => Some(Self::BottomLeft),
+            "bottom-right" => Some(Self::BottomRight),
+            _ => None,
         }
     }
 }
@@ -74,6 +83,9 @@ pub struct Config {
 
     #[serde(default = "layout")]
     pub layout: Vec<FumWidget>,
+
+    #[serde(skip)]
+    pub authorize: bool,
 }
 
 impl Default for Config {
@@ -89,7 +101,8 @@ impl Default for Config {
             height: height(),
             bg: bg(),
             fg: fg(),
-            layout: layout()
+            layout: layout(),
+            authorize: false,
         }
     }
 }
@@ -102,9 +115,8 @@ impl Config {
                     .map_err(|err| format!("Failed to parse config: {err}"))?;
 
                 Ok(config)
-            },
-            Err(_) => Ok(Config::default())
+            }
+            Err(_) => Ok(Config::default()),
         }
     }
 }
-

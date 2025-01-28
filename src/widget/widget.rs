@@ -1,16 +1,23 @@
-use ratatui::{buffer::Buffer, layout::{Constraint, Rect}, style::Color, widgets::StatefulWidget};
-use serde::Deserialize;
 use crate::{action::Action, state::FumState, text::replace_text, utils::etc::generate_btn_id};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Constraint, Rect},
+    style::Color,
+    widgets::StatefulWidget,
+};
+use serde::Deserialize;
 
 use super::{button, container, cover_art, empty, label, progress};
 
-fn default_truncate() -> bool { true }
+fn default_truncate() -> bool {
+    true
+}
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Direction {
     Vertical,
-    Horizontal
+    Horizontal,
 }
 
 impl Default for Direction {
@@ -23,7 +30,7 @@ impl Direction {
     pub fn to_dir(&self) -> ratatui::layout::Direction {
         match self {
             Self::Horizontal => ratatui::layout::Direction::Horizontal,
-            Self::Vertical => ratatui::layout::Direction::Vertical
+            Self::Vertical => ratatui::layout::Direction::Vertical,
         }
     }
 }
@@ -33,7 +40,7 @@ impl Direction {
 pub enum LabelAlignment {
     Left,
     Center,
-    Right
+    Right,
 }
 
 impl Default for LabelAlignment {
@@ -51,7 +58,7 @@ pub enum ContainerFlex {
     #[serde(rename = "space-around")]
     SpaceAround,
     #[serde(rename = "space-between")]
-    SpaceBetween
+    SpaceBetween,
 }
 
 impl Default for ContainerFlex {
@@ -63,11 +70,11 @@ impl Default for ContainerFlex {
 impl ContainerFlex {
     pub fn to_flex(&self) -> ratatui::layout::Flex {
         match self {
-            Self::Start         => ratatui::layout::Flex::Start,
-            Self::Center        => ratatui::layout::Flex::Center,
-            Self::End           => ratatui::layout::Flex::End,
-            Self::SpaceAround   => ratatui::layout::Flex::SpaceAround,
-            Self::SpaceBetween  => ratatui::layout::Flex::SpaceBetween
+            Self::Start => ratatui::layout::Flex::Start,
+            Self::Center => ratatui::layout::Flex::Center,
+            Self::End => ratatui::layout::Flex::End,
+            Self::SpaceAround => ratatui::layout::Flex::SpaceAround,
+            Self::SpaceBetween => ratatui::layout::Flex::SpaceBetween,
         }
     }
 }
@@ -77,7 +84,7 @@ impl ContainerFlex {
 pub enum CoverArtResize {
     Fit,
     Crop,
-    Scale
+    Scale,
 }
 
 impl Default for CoverArtResize {
@@ -89,9 +96,11 @@ impl Default for CoverArtResize {
 impl CoverArtResize {
     pub fn to_resize(&self) -> ratatui_image::Resize {
         match self {
-            Self::Fit       => ratatui_image::Resize::Fit(Some(ratatui_image::FilterType::CatmullRom)),
-            Self::Crop      => ratatui_image::Resize::Crop(None),
-            Self::Scale     => ratatui_image::Resize::Scale(Some(ratatui_image::FilterType::CatmullRom))
+            Self::Fit => ratatui_image::Resize::Fit(Some(ratatui_image::FilterType::CatmullRom)),
+            Self::Crop => ratatui_image::Resize::Crop(None),
+            Self::Scale => {
+                ratatui_image::Resize::Scale(Some(ratatui_image::FilterType::CatmullRom))
+            }
         }
     }
 }
@@ -100,7 +109,7 @@ impl CoverArtResize {
 pub struct ProgressOption {
     pub char: char,
     pub bg: Option<Color>,
-    pub fg: Option<Color>
+    pub fg: Option<Color>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -116,7 +125,7 @@ pub enum FumWidget {
         #[serde(default = "ContainerFlex::default")]
         flex: ContainerFlex,
         bg: Option<Color>,
-        fg: Option<Color>
+        fg: Option<Color>,
     },
     #[serde(rename = "cover-art")]
     CoverArt {
@@ -125,7 +134,7 @@ pub enum FumWidget {
         #[serde(default = "CoverArtResize::default")]
         resize: CoverArtResize,
         bg: Option<Color>,
-        fg: Option<Color>
+        fg: Option<Color>,
     },
     Label {
         text: String,
@@ -134,7 +143,7 @@ pub enum FumWidget {
         #[serde(default = "default_truncate")]
         truncate: bool,
         bg: Option<Color>,
-        fg: Option<Color>
+        fg: Option<Color>,
     },
     Button {
         #[serde(default = "generate_btn_id")]
@@ -143,18 +152,18 @@ pub enum FumWidget {
         action: Option<Action>,
         exec: Option<String>,
         bg: Option<Color>,
-        fg: Option<Color>
+        fg: Option<Color>,
     },
     Progress {
         size: Option<u16>,
         progress: ProgressOption,
-        empty: ProgressOption
+        empty: ProgressOption,
     },
     Empty {
         size: u16,
         bg: Option<Color>,
-        fg: Option<Color>
-    }
+        fg: Option<Color>,
+    },
 }
 
 impl StatefulWidget for &FumWidget {
@@ -162,7 +171,7 @@ impl StatefulWidget for &FumWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
     where
-        Self: Sized
+        Self: Sized,
     {
         match self {
             FumWidget::Container { .. } => container::render(&self, area, buf, state),
@@ -170,7 +179,7 @@ impl StatefulWidget for &FumWidget {
             FumWidget::Label { .. } => label::render(&self, area, buf, state),
             FumWidget::Button { .. } => button::render(&self, area, buf, state),
             FumWidget::Progress { .. } => progress::render(&self, area, buf, state),
-            FumWidget::Empty { .. } => empty::render(&self, area, buf, state)
+            FumWidget::Empty { .. } => empty::render(&self, area, buf, state),
         }
     }
 }
@@ -178,37 +187,42 @@ impl StatefulWidget for &FumWidget {
 impl FumWidget {
     pub fn get_size(&self, state: &mut FumState) -> Constraint {
         match self {
-            Self::Container { width, height, direction, .. } => {
-                match direction {
-                    Direction::Horizontal => width.map(|w| Constraint::Length(w)).unwrap_or(Constraint::Min(0)),
-                    Direction::Vertical => height.map(|h| Constraint::Length(h)).unwrap_or(Constraint::Min(0))
-                }
+            Self::Container {
+                width,
+                height,
+                direction,
+                ..
+            } => match direction {
+                Direction::Horizontal => width
+                    .map(|w| Constraint::Length(w))
+                    .unwrap_or(Constraint::Min(0)),
+                Direction::Vertical => height
+                    .map(|h| Constraint::Length(h))
+                    .unwrap_or(Constraint::Min(0)),
             },
-            Self::CoverArt { width, height, .. } => {
-                match &state.parent_direction {
-                    Direction::Horizontal => width.map(|w| Constraint::Length(w)).unwrap_or(Constraint::Min(0)),
-                    Direction::Vertical => height.map(|h| Constraint::Length(h)).unwrap_or(Constraint::Min(0))
-                }
+            Self::CoverArt { width, height, .. } => match &state.parent_direction {
+                Direction::Horizontal => width
+                    .map(|w| Constraint::Length(w))
+                    .unwrap_or(Constraint::Min(0)),
+                Direction::Vertical => height
+                    .map(|h| Constraint::Length(h))
+                    .unwrap_or(Constraint::Min(0)),
             },
-            Self::Label { .. } => {
-                match &state.parent_direction {
-                    Direction::Horizontal => Constraint::Min(0),
-                    Direction::Vertical => Constraint::Length(1)
-                }
+            Self::Label { .. } => match &state.parent_direction {
+                Direction::Horizontal => Constraint::Min(0),
+                Direction::Vertical => Constraint::Length(1),
             },
-            Self::Button { text, .. } => {
-                match &state.parent_direction {
-                    Direction::Horizontal => Constraint::Length(replace_text(text, state).len() as u16),
-                    Direction::Vertical => Constraint::Length(1)
-                }
+            Self::Button { text, .. } => match &state.parent_direction {
+                Direction::Horizontal => Constraint::Length(replace_text(text, state).len() as u16),
+                Direction::Vertical => Constraint::Length(1),
             },
-            Self::Progress { size, .. } => {
-                match &state.parent_direction {
-                    Direction::Horizontal => size.map(|s| Constraint::Length(s)).unwrap_or(Constraint::Min(0)),
-                    Direction::Vertical => Constraint::Length(1)
-                }
+            Self::Progress { size, .. } => match &state.parent_direction {
+                Direction::Horizontal => size
+                    .map(|s| Constraint::Length(s))
+                    .unwrap_or(Constraint::Min(0)),
+                Direction::Vertical => Constraint::Length(1),
             },
-            Self::Empty { size, .. } => Constraint::Length(*size)
+            Self::Empty { size, .. } => Constraint::Length(*size),
         }
     }
 }

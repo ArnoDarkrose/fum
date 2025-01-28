@@ -1,12 +1,20 @@
 use clap::Parser;
 use expanduser::expanduser;
 
-use crate::{config::{Align, Config}, fum::FumResult};
+use crate::{
+    config::{Align, Config},
+    fum::FumResult,
+};
 
 #[derive(Parser)]
 #[command(name = "fum", version, about)]
 struct FumCli {
-    #[arg(short, long, value_name = "json file", default_value = "~/.config/fum/config.json")]
+    #[arg(
+        short,
+        long,
+        value_name = "json file",
+        default_value = "~/.config/fum/config.json"
+    )]
     config: Option<String>,
 
     #[arg(short, long, value_name = "string[]", value_delimiter = ',')]
@@ -15,8 +23,15 @@ struct FumCli {
     #[arg(long, value_name = "boolean")]
     use_active_player: Option<bool>,
 
-    #[arg(short, long, value_name = "center,top,left,bottom,right,top-left,top-right,bottom-left,bottom-right")]
-    align: Option<String>
+    #[arg(
+        short,
+        long,
+        value_name = "center,top,left,bottom,right,top-left,top-right,bottom-left,bottom-right"
+    )]
+    align: Option<String>,
+
+    #[arg(long)]
+    authorize: bool,
 }
 
 pub fn run() -> FumResult<Config> {
@@ -36,10 +51,14 @@ pub fn run() -> FumResult<Config> {
     }
 
     if let Some(align) = fum_cli.align.as_ref() {
-        let align = Align::from_str(align.as_str())
-            .ok_or("Invalid value for 'align'".to_string())?;
+        let align =
+            Align::from_str(align.as_str()).ok_or("Invalid value for 'align'".to_string())?;
 
         config.align = align;
+    }
+
+    if fum_cli.authorize {
+        config.authorize = true;
     }
 
     Ok(config)
