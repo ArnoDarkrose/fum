@@ -1,3 +1,5 @@
+// TODO: make urls and other optional player parameteres truly optional
+
 mod action;
 mod cli;
 mod config;

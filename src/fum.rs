@@ -1,12 +1,27 @@
 use core::error;
-use std::{io::{stdout, Stdout}, process::{Command, Stdio}, time::Duration};
+use std::{
+    io::{stdout, Stdout},
+    process::{Command, Stdio},
+    time::Duration,
+};
 
-use crossterm::{event::{self, EnableMouseCapture, Event, KeyEventKind, MouseButton, MouseEventKind}, execute};
+use crossterm::{
+    event::{self, EnableMouseCapture, Event, KeyEventKind, MouseButton, MouseEventKind},
+    execute,
+};
 use mpris::Player;
 use ratatui::{prelude::CrosstermBackend, Terminal};
 use ratatui_image::picker::Picker;
 
-use crate::{action::Action, config::{Config, Keybind}, meta::Meta, state::FumState, ui::Ui, utils};
+use crate::{
+    action::Action,
+    config::{Config, Keybind},
+    meta::Meta,
+    state::FumState,
+    ui::Ui,
+    utils,
+    youtube::YoutubeClient,
+};
 
 pub type FumResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
@@ -18,7 +33,7 @@ pub struct Fum<'a> {
     pub player: Option<Player>,
     pub state: FumState,
     pub redraw: bool,
-    pub exit: bool
+    pub exit: bool,
 }
 
 impl<'a> Fum<'a> {
@@ -29,7 +44,7 @@ impl<'a> Fum<'a> {
 
         let meta = match &player {
             Some(player) => Meta::fetch(player, &picker, None).unwrap_or(Meta::default()),
-            None => Meta::default()
+            None => Meta::default(),
         };
 
         // Enable mouse capture
@@ -43,7 +58,7 @@ impl<'a> Fum<'a> {
             player,
             state: FumState::new(meta),
             redraw: true, // Draw at startup
-            exit: false
+            exit: false,
         })
     }
 
@@ -79,7 +94,7 @@ impl<'a> Fum<'a> {
                                         Action::run(action, self)?;
                                     }
                                 }
-                            },
+                            }
                             keybind => {
                                 if key.code == keybind.into_keycode() {
                                     Action::run(action, self)?;
@@ -87,9 +102,11 @@ impl<'a> Fum<'a> {
                             }
                         }
                     }
-                },
+                }
                 Event::Mouse(mouse) if mouse.kind == MouseEventKind::Down(MouseButton::Left) => {
-                    if let Some((action, exec)) = self.ui.click(mouse.column, mouse.row, &self.state.buttons) {
+                    if let Some((action, exec)) =
+                        self.ui.click(mouse.column, mouse.row, &self.state.buttons)
+                    {
                         let action = action.to_owned();
                         let exec = exec.to_owned();
 
@@ -108,7 +125,7 @@ impl<'a> Fum<'a> {
                             }
                         }
                     }
-                },
+                }
                 Event::Resize(_, _) => {
                     self.redraw = true;
                 }

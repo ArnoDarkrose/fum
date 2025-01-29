@@ -1,4 +1,9 @@
-use std::{fs, io::{self, Cursor}, str::FromStr, time::Duration};
+use std::{
+    fs,
+    io::{self, Cursor},
+    str::FromStr,
+    time::Duration,
+};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use image::ImageReader;
@@ -11,7 +16,7 @@ use crate::{config::Config, fum::FumResult};
 #[derive(Clone)]
 pub struct CoverArt {
     pub url: String,
-    pub image: StatefulProtocol
+    pub image: StatefulProtocol,
 }
 
 #[derive(Clone)]
@@ -26,7 +31,8 @@ pub struct Meta {
     pub position: Duration,
     pub length: Duration,
     pub cover_art: Option<CoverArt>,
-    pub changed: bool
+    pub url: Option<String>,
+    pub changed: bool,
 }
 
 impl Default for Meta {
@@ -42,7 +48,8 @@ impl Default for Meta {
             position: Duration::from_secs(0),
             length: Duration::from_secs(0),
             cover_art: None,
-            changed: false
+            url: None,
+            changed: false,
         }
     }
 }
@@ -54,6 +61,7 @@ impl Meta {
         let title = Meta::get_title(&metadata)?;
         let artists = Meta::get_artists(&metadata)?;
         let album = Meta::get_album(&metadata)?;
+        let url = Meta::get_url(&metadata)?;
         let status = Meta::get_status(player)?;
         let status_icon = Meta::get_status_icon(&status);
         let position = Meta::get_position(player)?;
@@ -63,11 +71,12 @@ impl Meta {
         let mut changed = false;
 
         if let Some(current) = &current {
-            if current.title != title ||
-            current.artists != artists ||
-            current.status != status ||
-            current.length != length ||
-            position.as_secs() > current.position.as_secs() {
+            if current.title != title
+                || current.artists != artists
+                || current.status != status
+                || current.length != length
+                || position.as_secs() > current.position.as_secs()
+            {
                 changed = true;
             }
         }
@@ -83,13 +92,14 @@ impl Meta {
             position,
             length,
             cover_art: Some(cover_art),
-            changed
+            url: Some(url),
+            changed,
         })
     }
 
     pub fn get_player(config: &Config) -> FumResult<Player> {
-        let finder = PlayerFinder::new()
-            .map_err(|err| format!("Failed to connect to D-Bus: {:?}.", err))?;
+        let finder =
+            PlayerFinder::new().map_err(|err| format!("Failed to connect to D-Bus: {:?}.", err))?;
 
         let players = finder
             .find_all()
@@ -99,28 +109,28 @@ impl Meta {
             let identity = player.identity().to_lowercase();
             let bus_name = player.bus_name();
 
-            if config.players.iter().any(|p|
-                p.to_lowercase() == identity.to_lowercase() ||
-                bus_name.starts_with(p)
-            ) {
+            if config
+                .players
+                .iter()
+                .any(|p| p.to_lowercase() == identity.to_lowercase() || bus_name.starts_with(p))
+            {
                 return Ok(player);
             }
         }
 
         // Find the most likely player to be used
         if config.use_active_player {
-            let active = finder.find_active()
-                .map_err(|err| format!("'use-active-player' is set to true but failed to get active player: {err}"))?;
+            let active = finder.find_active().map_err(|err| {
+                format!("'use-active-player' is set to true but failed to get active player: {err}")
+            })?;
 
             return Ok(active);
         }
 
-        Err(Box::new(
-            io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to find any specified players"
-            )
-        ))
+        Err(Box::new(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to find any specified players",
+        )))
     }
 
     pub fn get_metadata(player: &Player) -> FumResult<Metadata> {
@@ -129,8 +139,7 @@ impl Meta {
     }
 
     pub fn get_trackid(metadata: &Metadata) -> FumResult<TrackID> {
-        let trackid = metadata.track_id()
-            .ok_or("Failed to get track_id")?;
+        let trackid = metadata.track_id().ok_or("Failed to get track_id")?;
 
         Ok(trackid)
     }
@@ -153,6 +162,15 @@ impl Meta {
         Ok(metadata)
     }
 
+    pub fn get_url(metadata: &Metadata) -> FumResult<String> {
+        let url = metadata
+            .url()
+            .map(|t| t.to_string())
+            .ok_or("Failed to get xesam:url")?;
+
+        Ok(url)
+    }
+
     pub fn get_status(player: &Player) -> FumResult<PlaybackStatus> {
         let status = player
             .get_playback_status()
@@ -165,12 +183,13 @@ impl Meta {
         match status {
             PlaybackStatus::Stopped => '󰓛',
             PlaybackStatus::Playing => '󰏤',
-            PlaybackStatus::Paused  => '󰐊'
+            PlaybackStatus::Paused => '󰐊',
         }
     }
 
     pub fn get_position(player: &Player) -> FumResult<Duration> {
-        let position = player.get_position()
+        let position = player
+            .get_position()
             .map_err(|err| format!("Failed to get player position: {err}"))?;
 
         Ok(position)
@@ -212,13 +231,17 @@ impl Meta {
 
                 MetadataValue::F64(f64) => f64.to_string(),
 
-                MetadataValue::Unsupported | _ => "!Unsupported".to_string()
+                MetadataValue::Unsupported | _ => "!Unsupported".to_string(),
             },
-            None => "!NotFound".to_string()
+            None => "!NotFound".to_string(),
         }
     }
 
-    pub fn get_cover_art(metadata: &Metadata, picker: &Picker, current: Option<&Meta>) -> FumResult<CoverArt> {
+    pub fn get_cover_art(
+        metadata: &Metadata,
+        picker: &Picker,
+        current: Option<&Meta>,
+    ) -> FumResult<CoverArt> {
         let art_url = metadata
             .get("mpris:artUrl")
             .ok_or("Failed to get mpris:artUrl")?;
@@ -234,13 +257,13 @@ impl Meta {
 
             // Handle file:// scheme
             if art_url.starts_with("file://") {
-                let art_path =  Url::from_str(&art_url)
+                let art_path = Url::from_str(&art_url)
                     .map_err(|err| format!("Failed to parse url: {art_url}: {err}"))?
                     .to_file_path()
                     .map_err(|_| format!("Failed to convert url: {art_url} to file_path"))?;
 
-                let bytes = fs::read(&art_path)
-                    .map_err(|err| format!("Failed to read art file: {err}"))?;
+                let bytes =
+                    fs::read(&art_path).map_err(|err| format!("Failed to read art file: {err}"))?;
 
                 let cover_art = ImageReader::new(Cursor::new(bytes))
                     .with_guessed_format()
@@ -250,8 +273,8 @@ impl Meta {
 
                 return Ok(CoverArt {
                     url: art_url.to_string(),
-                    image: picker.new_resize_protocol(cover_art)
-                })
+                    image: picker.new_resize_protocol(cover_art),
+                });
             }
 
             // Handle base64
@@ -259,9 +282,10 @@ impl Meta {
                 let base64_data = art_url
                     .split_once("base64,")
                     .ok_or("Invalid base64 url format")?
-                .1;
+                    .1;
 
-                let bytes = BASE64_STANDARD.decode(base64_data)
+                let bytes = BASE64_STANDARD
+                    .decode(base64_data)
                     .map_err(|err| format!("Failed to decode base64 data: {err}"))?;
 
                 let cover_art = ImageReader::new(Cursor::new(bytes))
@@ -283,7 +307,8 @@ impl Meta {
                 .send()
                 .map_err(|_| "Failed to fetch art url".to_string())?;
 
-            let bytes = resp.bytes()
+            let bytes = resp
+                .bytes()
                 .map_err(|_| "Failed to get art image bytes".to_string())?;
 
             let cover_art = ImageReader::new(Cursor::new(bytes))
@@ -294,15 +319,13 @@ impl Meta {
 
             return Ok(CoverArt {
                 url: art_url.to_string(),
-                image: picker.new_resize_protocol(cover_art)
-            })
+                image: picker.new_resize_protocol(cover_art),
+            });
         }
 
-        Err(Box::new(
-            io::Error::new(
-                io::ErrorKind::Other,
-                "mpris:artUrl is not a string."
-            )
-        ))
+        Err(Box::new(io::Error::new(
+            io::ErrorKind::Other,
+            "mpris:artUrl is not a string.",
+        )))
     }
 }

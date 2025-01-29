@@ -2,25 +2,49 @@ use std::collections::HashMap;
 
 use ratatui::style::Color;
 
-use crate::{action::Action, utils::etc::generate_btn_id, widget::{ContainerFlex, CoverArtResize, Direction, FumWidget, LabelAlignment, ProgressOption}};
+use crate::{
+    action::Action,
+    utils::etc::generate_btn_id,
+    widget::{ContainerFlex, CoverArtResize, Direction, FumWidget, LabelAlignment, ProgressOption},
+};
 
 use super::{keybind::Keybind, Align};
 
-pub fn players() -> Vec<String> { vec!["spotify".to_string()] }
-pub fn use_active_player() -> bool { false }
-pub fn align() -> Align { Align::Center }
-pub fn direction() -> Direction { Direction::Vertical }
-pub fn flex() -> ContainerFlex { ContainerFlex::Start }
-pub fn width() -> u16 { 20 }
-pub fn height() -> u16 { 18 }
-pub fn bg() -> Color { Color::Reset }
-pub fn fg() -> Color { Color::Reset }
+pub fn players() -> Vec<String> {
+    vec!["spotify".to_string()]
+}
+pub fn use_active_player() -> bool {
+    false
+}
+pub fn align() -> Align {
+    Align::Center
+}
+pub fn direction() -> Direction {
+    Direction::Vertical
+}
+pub fn flex() -> ContainerFlex {
+    ContainerFlex::Start
+}
+pub fn width() -> u16 {
+    20
+}
+pub fn height() -> u16 {
+    18
+}
+pub fn bg() -> Color {
+    Color::Reset
+}
+pub fn fg() -> Color {
+    Color::Reset
+}
 pub fn keybinds() -> HashMap<Keybind, Action> {
     HashMap::from([
-        (Keybind::Many([Keybind::Esc, Keybind::Char('q')].to_vec()), Action::Quit),
+        (Keybind::Char('q'), Action::Quit),
+        (Keybind::Esc, Action::Quit),
         (Keybind::Char('h'), Action::Prev),
         (Keybind::Char('l'), Action::Next),
-        (Keybind::Char(' '), Action::PlayPause)
+        (Keybind::Char(' '), Action::PlayPause),
+        (Keybind::Char('u'), Action::Upvote),
     ])
 }
 pub fn layout() -> Vec<FumWidget> {
@@ -45,14 +69,14 @@ pub fn layout() -> Vec<FumWidget> {
                     align: LabelAlignment::Center,
                     truncate: true,
                     bg: None,
-                    fg: None
+                    fg: None,
                 },
                 FumWidget::Label {
                     text: "$artists".to_string(),
                     align: LabelAlignment::Center,
                     truncate: true,
                     bg: None,
-                    fg: None
+                    fg: None,
                 },
                 FumWidget::Container {
                     width: None,
@@ -68,7 +92,7 @@ pub fn layout() -> Vec<FumWidget> {
                             action: Some(Action::Prev),
                             exec: None,
                             bg: None,
-                            fg: None
+                            fg: None,
                         },
                         FumWidget::Button {
                             id: generate_btn_id(),
@@ -76,7 +100,7 @@ pub fn layout() -> Vec<FumWidget> {
                             action: Some(Action::PlayPause),
                             exec: None,
                             bg: None,
-                            fg: None
+                            fg: None,
                         },
                         FumWidget::Button {
                             id: generate_btn_id(),
@@ -84,22 +108,22 @@ pub fn layout() -> Vec<FumWidget> {
                             action: Some(Action::Next),
                             exec: None,
                             bg: None,
-                            fg: None
-                        }
-                    ])
+                            fg: None,
+                        },
+                    ]),
                 },
                 FumWidget::Progress {
                     size: None,
                     progress: ProgressOption {
                         char: '󰝤',
                         bg: None,
-                        fg: None
+                        fg: None,
                     },
                     empty: ProgressOption {
                         char: '󰁱',
                         bg: None,
-                        fg: None
-                    }
+                        fg: None,
+                    },
                 },
                 FumWidget::Container {
                     width: None,
@@ -114,18 +138,18 @@ pub fn layout() -> Vec<FumWidget> {
                             align: LabelAlignment::Left,
                             truncate: false,
                             bg: None,
-                            fg: None
+                            fg: None,
                         },
                         FumWidget::Label {
                             text: "$length".to_string(),
                             align: LabelAlignment::Right,
                             truncate: false,
                             bg: None,
-                            fg: None
-                        }
-                    ])
-                }
-            ])
-        }
+                            fg: None,
+                        },
+                    ]),
+                },
+            ]),
+        },
     ])
 }
