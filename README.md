@@ -35,9 +35,6 @@ Navigate to the releases page and download the latest binary
 
 ### Cargo (From Source)
 
-> [!CAUTION]
-> Installing from source is typically not recommended as it will probably have breaking stuff.
-
 ```bash
 git clone https://github.com/ArnoDarkrose/fum.git
 cd fum
