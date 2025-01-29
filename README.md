@@ -3,11 +3,11 @@
 </h3>
 
 <h2 align="center">
-  fum: A fully ricable tui-based mpris music client.
+  fum: A fully ricable tui-based mpris youtube music client.
 </h2>
 
 <p align="center">
-  fum is a tui-based mpris music client designed to provide a simple and efficient way to display and control your music within a tui interface.
+  fum is a tui-based mpris music client designed to provide a simple and efficient way to display and control your youtube music within a tui interface.
 </p>
 
 <p align="center">
@@ -31,6 +31,7 @@
     <img src="https://img.shields.io/crates/v/fum-player?style=for-the-badge&logo=rust&logoColor=ffffff&labelColor=1C1B22&color=DEFEDF" />
   </a>
 </p>
+This is a fork of the original fum. This repo contains additions oriented on working specifically with youtube music. For example, in contrast to the original fum, this version has the ability to like and dislike currently playing video
 
 ## Demo
 
@@ -41,78 +42,8 @@
 
 ## Installation
 
-### Arch
-
-```bash
-yay -S fum
-# paru -S fum
-```
-
-### Nix Flakes
-
-To install `fum` using Nix Flakes and configure it with `configuration.nix`, follow these steps:
-
-1. Add `fum` as an input in your `flake.nix`:
-
-    ```nix
-    {
-      inputs = {
-        nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-        flake-utils.url = "github:numtide/flake-utils";
-        fum.url = "github:qxb3/fum";
-      };
-
-      outputs = { self, nixpkgs, flake-utils, fum }:
-        flake-utils.lib.eachDefaultSystem (system: let
-          pkgs = import nixpkgs { inherit system; };
-        in {
-          nixosConfigurations = {
-            hostname = pkgs.lib.nixosSystem {
-              system = system;
-              modules = [
-                ./configuration.nix
-                fum.nixosModules.fum
-                {
-                  services.fum = {
-                    enable = true;
-                    players = ["spotify"];
-                    use_active_player = true;
-                    align = "center";
-                    direction = "vertical";
-                    flex = "start";
-                    width = 20;
-                    height = 18;
-                    layout = [];
-                  };
-                }
-              ];
-            };
-          };
-        });
-    }
-    ```
-
-2. Apply the NixOS configuration:
-
-    ```bash
-    sudo nixos-rebuild switch
-    ```
-
-### Nix Profile
-
-To install `fum` using Nix profile, run the following command:
-
-```bash
-nix profile install github:qxb3/fum
-```
-
-### Nix Run
-
-To run `fum` directly using `nix run`, use the following command:
-
-```bash
-nix run github:qxb3/fum
-```
+### Releases
+Navigate to the releases page and download the latest binary
 
 ### Cargo (From Source)
 
@@ -120,7 +51,7 @@ nix run github:qxb3/fum
 > Installing from source is typically not recommended as it will probably have breaking stuff.
 
 ```bash
-git clone https://github.com/qxb3/fum.git
+git clone https://github.com/ArnoDarkrose/fum.git
 cd fum
 cargo build --release
 
@@ -137,15 +68,11 @@ See [Wiki](https://github.com/qxb3/fum/wiki/Configuring)
 
 ### Need help?
 
-Join [Discord Server!](https://discord.gg/UfXMeyZ6Zt).
+Text me on Telegram @ArnoDarkrose
 
 ## Showcase on a rice
 
 <img src="https://github.com/qxb3/fum/blob/main/repo/showcase.png" />
-
-## Contributing
-
-Thank you for considering contributing to fum! Contributions are welcome and appreciated.
 
 ## LICENSE
 
