@@ -3,10 +3,12 @@ use std::time::Duration;
 use mpris::{LoopStatus, Player};
 use serde::{de, Deserialize};
 
+use tokio::sync::oneshot;
+
 use crate::{
     fum::Fum,
     regexes::{BACKWARD_RE, FORWARD_RE, VAR_SET_RE, VAR_TOGGLE_RE},
-    youtube::*,
+    youtube::{Rating, YouTubeAction},
     FumResult,
 };
 
@@ -46,6 +48,8 @@ pub enum Action {
     Set(String, String),
 
     Upvote,
+    Downvote,
+    ClearVote,
 }
 
 impl<'de> Deserialize<'de> for Action {
@@ -76,6 +80,8 @@ impl<'de> Deserialize<'de> for Action {
             "loop_cycle()" => Ok(Action::LoopCycle),
 
             "upvote()" => Ok(Action::Upvote),
+            "downvote()" => Ok(Action::Downvote),
+            "clear_vote()" => Ok(Action::ClearVote),
 
             // forward() action
             a if FORWARD_RE.is_match(a) => {
@@ -143,6 +149,21 @@ impl<'de> Deserialize<'de> for Action {
             _ => Err(de::Error::custom(format!("Unknown action: {}", action_str))),
         }
     }
+}
+
+fn rate_youtube_video(fum: &mut Fum, rating: Rating) -> reqwest::Response {
+    let (sender, receiver) = oneshot::channel();
+
+    let url = fum.state.meta.url.clone().unwrap();
+    let action = YouTubeAction::RateVideo {
+        url,
+        sender,
+        rating,
+    };
+
+    fum.youtube_action_sender.blocking_send(action).unwrap();
+
+    receiver.blocking_recv().unwrap()
 }
 
 impl Action {
@@ -232,7 +253,15 @@ impl Action {
                 }
             }
             Action::Upvote => {
-                // TODO: add upvote action
+                // TODO: make a button change depending on the resp value
+
+                let resp = rate_youtube_video(fum, Rating::Like);
+            }
+            Action::Downvote => {
+                let resp = rate_youtube_video(fum, Rating::Dislike);
+            }
+            Action::ClearVote => {
+                let resp = rate_youtube_video(fum, Rating::None);
             }
         }
 

@@ -13,6 +13,8 @@ use mpris::Player;
 use ratatui::{prelude::CrosstermBackend, Terminal};
 use ratatui_image::picker::Picker;
 
+use tokio::sync::mpsc;
+
 use crate::{
     action::Action,
     config::{Config, Keybind},
@@ -20,7 +22,7 @@ use crate::{
     state::FumState,
     ui::Ui,
     utils,
-    youtube::YoutubeClient,
+    youtube::{YouTubeAction, YoutubeClient},
 };
 
 pub type FumResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -33,6 +35,7 @@ pub struct Fum<'a> {
     pub player: Option<Player>,
     pub state: FumState,
     pub redraw: bool,
+    pub youtube_action_sender: mpsc::Sender<YouTubeAction>,
     pub exit: bool,
 }
 
@@ -50,6 +53,8 @@ impl<'a> Fum<'a> {
         // Enable mouse capture
         execute!(stdout(), EnableMouseCapture)?;
 
+        let sender = YoutubeClient::get_handle();
+
         Ok(Self {
             config,
             terminal: ratatui::init(),
@@ -58,6 +63,7 @@ impl<'a> Fum<'a> {
             player,
             state: FumState::new(meta),
             redraw: true, // Draw at startup
+            youtube_action_sender: sender,
             exit: false,
         })
     }

@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{self, Duration, SystemTime};
@@ -6,11 +7,10 @@ use actix_web::{get, web, App, HttpServer, Responder};
 use expanduser::expanduser;
 use reqwest::Client;
 
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::runtime::Runtime;
-use tokio::sync::oneshot::{self, Sender};
+use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 
@@ -29,7 +29,7 @@ struct CallbackResponse {
 }
 
 struct AppData {
-    sender: Mutex<Option<Sender<JoinHandle<()>>>>,
+    sender: Mutex<Option<oneshot::Sender<JoinHandle<()>>>>,
 }
 
 #[get("/callback")]
@@ -109,7 +109,9 @@ async fn get_tokens(code: String) {
         path.push(filename);
 
         set.spawn(async move {
-            let mut fd = File::create(&path).await.expect("fum config dir not found");
+            let mut fd = tokio::fs::File::create(&path)
+                .await
+                .expect("fum config dir not found");
 
             fd.write_all(format!("{data}").as_bytes())
                 .await
@@ -160,7 +162,7 @@ async fn start() {
     rest_tasks_handle.await.unwrap();
 }
 
-async fn start_server(sender: Mutex<Option<Sender<JoinHandle<()>>>>) {
+async fn start_server(sender: Mutex<Option<oneshot::Sender<JoinHandle<()>>>>) {
     let app_data = web::Data::new(AppData { sender });
     HttpServer::new(move || {
         App::new()
@@ -189,7 +191,7 @@ pub fn extract_video_id(url: &str) -> Option<String> {
         .and_then(|capture| capture.get(1).map(|m| m.as_str().to_string()))
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 pub enum Rating {
     Like,
     Dislike,
@@ -215,6 +217,15 @@ pub struct YoutubeClient {
     client: Client,
     refresh_token: String,
     expiration_date: SystemTime,
+}
+
+#[derive(Debug)]
+pub enum YouTubeAction {
+    RateVideo {
+        url: String,
+        sender: oneshot::Sender<reqwest::Response>,
+        rating: Rating,
+    },
 }
 
 impl YoutubeClient {
@@ -247,15 +258,14 @@ impl YoutubeClient {
             .unwrap()
     }
 
-    pub async fn new() -> Self {
-        async fn read_data(filename: &'static str, mut path: PathBuf) -> String {
+    fn new() -> Self {
+        fn read_data(filename: &'static str, mut path: PathBuf) -> String {
             path.push(filename);
 
-            let mut fd = File::open(path).await.expect("failed to open file");
+            let mut fd = std::fs::File::open(path).expect("failed to open file");
 
             let mut buf = String::new();
             fd.read_to_string(&mut buf)
-                .await
                 .expect("failed to read from file");
 
             buf
@@ -263,19 +273,14 @@ impl YoutubeClient {
 
         let base_path = expanduser("~/.config/fum").expect("failed to find fum config path");
 
-        let access_token_handle = tokio::spawn(read_data("access_token", base_path.clone()));
-        let refresh_token_handle = tokio::spawn(read_data("refresh_token", base_path.clone()));
-        let expiration_date_handle =
-            tokio::spawn(read_data("access_token_expiration_date", base_path));
-
-        let expiration_date = expiration_date_handle.await.unwrap();
+        let expiration_date = read_data("access_token_expiration_date", base_path.clone());
         let expiration_date: u64 = expiration_date
             .parse()
             .expect("failed to parse expiration date");
         let expiration_date = SystemTime::UNIX_EPOCH + Duration::from_secs(expiration_date);
 
-        let access_token = access_token_handle.await.unwrap();
-        let refresh_token = refresh_token_handle.await.unwrap();
+        let access_token = read_data("access_token", base_path.clone());
+        let refresh_token = read_data("refresh_token", base_path);
 
         let header_val =
             reqwest::header::HeaderValue::from_str(&format!("Bearer {access_token}")).unwrap();
@@ -292,6 +297,78 @@ impl YoutubeClient {
             refresh_token,
             expiration_date,
         }
+    }
+
+    pub fn get_handle() -> mpsc::Sender<YouTubeAction> {
+        let mut client = Self::new();
+
+        let (sender, mut receiver) = tokio::sync::mpsc::channel(10);
+
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().expect("failed to initialize tokio runtime");
+
+            rt.block_on(async move {
+                while let Some(msg) = receiver.recv().await {
+                    match msg {
+                        YouTubeAction::RateVideo {
+                            url,
+                            sender: resp_sender,
+                            rating,
+                        } => {
+                            let resp = client.rate_video(&url, rating).await;
+
+                            resp_sender
+                                .send(resp)
+                                .expect("failed to send youtube server response through channel");
+                        }
+                        _ => {
+                            panic!("unexpected variant of YouTubeAction")
+                        }
+                    }
+                }
+            })
+        });
+
+        sender
+    }
+
+    async fn save_data(access_token: String, refresh_token: String, expiration_date: u64) {
+        fn save_on_disk<T: std::fmt::Display + Send + Sync + 'static>(
+            set: &mut JoinSet<()>,
+            data: T,
+            filename: &'static str,
+            base_path: std::path::PathBuf,
+        ) {
+            let mut path = base_path.clone();
+            path.push(filename);
+
+            set.spawn(async move {
+                let mut fd = tokio::fs::File::create(&path)
+                    .await
+                    .expect("fum config dir not found");
+
+                fd.write_all(format!("{data}").as_bytes())
+                    .await
+                    .expect("failed to write to file");
+            });
+        }
+
+        let mut set = JoinSet::new();
+
+        let base_path = expanduser("~/.config/fum").expect("fum config dir not found");
+
+        save_on_disk(&mut set, access_token, "access_token", base_path.clone());
+
+        save_on_disk(&mut set, refresh_token, "refresh_token", base_path.clone());
+
+        save_on_disk(
+            &mut set,
+            expiration_date,
+            "access_token_expiration_date",
+            base_path,
+        );
+
+        set.join_all().await;
     }
 
     pub async fn refresh_tokens(&mut self) {
@@ -331,40 +408,57 @@ impl YoutubeClient {
             .expect("failed to create http client");
 
         self.client = client;
+
+        tokio::spawn(YoutubeClient::save_data(
+            access_token,
+            self.refresh_token.clone(),
+            self.expiration_date
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        ))
+        .await
+        .unwrap();
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs::File;
 
-    #[tokio::test]
-    async fn test_rate_video() {
+    #[test]
+    fn test_rate_video() {
         let path = expanduser("~/.config/fum/access_token").unwrap();
-        let mut fd = File::open(path).await.unwrap();
+        let mut fd = File::open(path).unwrap();
 
         let mut token = String::new();
-        fd.read_to_string(&mut token).await.unwrap();
+        fd.read_to_string(&mut token).unwrap();
 
-        let mut client = YoutubeClient::new().await;
+        let client_handle = YoutubeClient::get_handle();
 
-        let response = client
-            .rate_video(
-                "https://music.youtube.com/watch?v=i0pfFewnYLw&list=RDAMVMi0pfFewnYLw",
-                Rating::None,
-            )
-            .await;
+        let (sender, receiver) = oneshot::channel();
+        client_handle
+            .blocking_send(YouTubeAction::RateVideo {
+                url: "https://music.youtube.com/watch?v=i0pfFewnYLw&list=RDAMVMi0pfFewnYLw"
+                    .to_string(),
+                sender,
+                rating: Rating::Like,
+            })
+            .unwrap();
 
+        let response = receiver.blocking_recv().unwrap();
         println!("{}", response.status());
     }
 
     #[tokio::test]
-    async fn test_new_client_refresh() {
-        let mut client = YoutubeClient::new().await;
+    async fn test_refresh_token() {
+        let mut client = YoutubeClient::new();
 
-        // println!("{client:#?}");
+        println!("{client:#?}");
 
         client.refresh_tokens().await;
-        // println!("{client:#?}");
+
+        println!("{client:#?}");
     }
 }

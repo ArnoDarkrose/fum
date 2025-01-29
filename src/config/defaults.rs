@@ -45,6 +45,8 @@ pub fn keybinds() -> HashMap<Keybind, Action> {
         (Keybind::Char('l'), Action::Next),
         (Keybind::Char(' '), Action::PlayPause),
         (Keybind::Char('u'), Action::Upvote),
+        (Keybind::Char('d'), Action::Downvote),
+        (Keybind::Char('c'), Action::ClearVote),
     ])
 }
 pub fn layout() -> Vec<FumWidget> {
