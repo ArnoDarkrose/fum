@@ -1,5 +1,5 @@
 <h3 align="center">
-  <img src="https://raw.githubusercontent.com/qxb3/fum/refs/heads/main/repo/logo.png" width="200"/>
+  <img src="https://raw.githubusercontent.com/ArnoDarkrose/fum/refs/heads/main/repo/logo.png" width="200"/>
 </h3>
 
 <h2 align="center">
@@ -11,24 +11,12 @@
 </p>
 
 <p align="center">
-  <a href="https://discord.gg/UfXMeyZ6Zt">
-    <img src="https://img.shields.io/discord/1331325131649454184?style=for-the-badge&logo=discord&logoColor=%23ffffff&label=discord&labelColor=1C1B22&color=DEFEDF" />
-  </a>
-
-  <a href="https://github.com/qxb3/fum/blob/main/LICENSE">
+  <a href="https://github.com/ArnoDarkrose/fum/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/MIT-DEFEDF?style=for-the-badge&logo=Pinboard&label=License&labelColor=1C1B22" />
   </a>
 
-  <a href="https://github.com/qxb3/fum/stargazers">
-    <img src="https://img.shields.io/github/stars/qxb3/fum?style=for-the-badge&logo=Apache%20Spark&logoColor=ffffff&labelColor=1C1B22&color=DEFEDF" />
-  </a>
-
-  <a href="https://aur.archlinux.org/packages/fum">
-    <img src="https://img.shields.io/aur/version/fum?style=for-the-badge&logo=archlinux&logoColor=ffffff&labelColor=1C1B22&color=DEFEDF" />
-  </a>
-
-  <a href="https://crates.io/crates/fum-player">
-    <img src="https://img.shields.io/crates/v/fum-player?style=for-the-badge&logo=rust&logoColor=ffffff&labelColor=1C1B22&color=DEFEDF" />
+  <a href="https://github.com/ArnoDarkrose/fum/stargazers">
+    <img src="https://img.shields.io/github/stars/ArnoDarkrose/fum?style=for-the-badge&logo=Apache%20Spark&logoColor=ffffff&labelColor=1C1B22&color=DEFEDF" />
   </a>
 </p>
 This is a fork of the original fum. This repo contains additions oriented on working specifically with youtube music. For example, in contrast to the original fum, this version has the ability to like and dislike currently playing video
@@ -62,9 +50,12 @@ cargo build --release
 mv target/release/fum /usr/bin
 ```
 
+### Getting started
+Before using fum, you will need to authorize to your google account, which can be done by passing `--authorize` key to the app. After that, you can use it normally, just like original fum.
+
 ### Configuring
 
-See [Wiki](https://github.com/qxb3/fum/wiki/Configuring)
+See [Wiki](https://github.com/ArnoDarkrose/fum/wiki/Configuring)
 
 ### Need help?
 
@@ -72,8 +63,8 @@ Text me on Telegram @ArnoDarkrose
 
 ## Showcase on a rice
 
-<img src="https://github.com/qxb3/fum/blob/main/repo/showcase.png" />
+<img src="https://github.com/ArnoDarkrose/fum/blob/main/repo/showcase.png" />
 
 ## LICENSE
 
-[MIT](https://github.com/qxb3/fum/blob/main/LICENSE)
+[MIT](https://github.com/ArnoDarkrose/fum/blob/main/LICENSE)
