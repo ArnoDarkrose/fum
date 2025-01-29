@@ -65,3 +65,6 @@ Text me on Telegram @ArnoDarkrose
 ## LICENSE
 
 [MIT](https://github.com/ArnoDarkrose/fum/blob/main/LICENSE)
+
+## Privacy Policy
+Check out [privacy policy](https://github.com/ArnoDarkrose/fum/wiki/"Privacy Policy")
