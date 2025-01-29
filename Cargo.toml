@@ -1,9 +1,9 @@
 [package]
 name = "fum-player"
-description = "A tui-based mpris music client."
-version = "0.7.0"
-repository = "https://github.com/qxb3/fum"
-homepage = "https://github.com/qxb3/fum"
+description = "A tui-based mpris youtubemusic client."
+version = "0.8.0"
+repository = "https://github.com/ArnoDarkrose/fum"
+homepage = "https://github.com/ArnoDarkrose/fum"
 license = "MIT"
 edition = "2021"
 
@@ -31,9 +31,3 @@ tokio = { version = "1.43.0", features = ["full"] }
 uuid = { version = "1.12.0", features = ["v4", "fast-rng"] }
 webbrowser = "1.0.3"
 
-[profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = true

@@ -22,7 +22,7 @@ use crate::{
     state::FumState,
     ui::Ui,
     utils,
-    youtube::{YouTubeAction, YoutubeClient},
+    youtube::{YouTubeAction, YouTubeClient},
 };
 
 pub type FumResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -53,7 +53,7 @@ impl<'a> Fum<'a> {
         // Enable mouse capture
         execute!(stdout(), EnableMouseCapture)?;
 
-        let sender = YoutubeClient::get_handle();
+        let sender = YouTubeClient::get_handle();
 
         Ok(Self {
             config,
