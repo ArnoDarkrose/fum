@@ -10,7 +10,7 @@ pub struct FumState {
     pub vars: HashMap<String, String>,
     pub parent_direction: Direction,
     pub parent_bg: Color,
-    pub parent_fg: Color
+    pub parent_fg: Color,
 }
 
 impl FumState {
@@ -21,7 +21,7 @@ impl FumState {
             vars: HashMap::new(),
             parent_direction: Direction::default(),
             parent_bg: Color::Reset,
-            parent_fg: Color::Reset
+            parent_fg: Color::Reset,
         }
     }
 }

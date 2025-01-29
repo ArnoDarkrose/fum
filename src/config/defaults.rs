@@ -14,7 +14,7 @@ pub fn players() -> Vec<String> {
     vec!["spotify".to_string()]
 }
 pub fn use_active_player() -> bool {
-    false
+    true
 }
 pub fn align() -> Align {
     Align::Center

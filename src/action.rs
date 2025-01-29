@@ -151,19 +151,22 @@ impl<'de> Deserialize<'de> for Action {
     }
 }
 
-fn rate_youtube_video(fum: &mut Fum, rating: Rating) -> reqwest::Response {
-    let (sender, receiver) = oneshot::channel();
+fn rate_youtube_video(fum: &mut Fum, rating: Rating) -> Option<reqwest::Response> {
+    if let Some(ref url) = fum.state.meta.url {
+        let (sender, receiver) = oneshot::channel();
 
-    let url = fum.state.meta.url.clone().unwrap();
-    let action = YouTubeAction::RateVideo {
-        url,
-        sender,
-        rating,
-    };
+        let action = YouTubeAction::RateVideo {
+            url: url.clone(),
+            sender,
+            rating,
+        };
 
-    fum.youtube_action_sender.blocking_send(action).unwrap();
+        fum.youtube_action_sender.blocking_send(action).unwrap();
 
-    receiver.blocking_recv().unwrap()
+        Some(receiver.blocking_recv().unwrap())
+    } else {
+        None
+    }
 }
 
 impl Action {
@@ -253,15 +256,16 @@ impl Action {
                 }
             }
             Action::Upvote => {
-                // TODO: make a button change depending on the resp value
+                // TODO: make a button change depending on the resp value (or I could simply load the rating state
+                // on every update, though this seems to be not a very good idea)
 
-                let resp = rate_youtube_video(fum, Rating::Like);
+                let _resp = rate_youtube_video(fum, Rating::Like);
             }
             Action::Downvote => {
-                let resp = rate_youtube_video(fum, Rating::Dislike);
+                let _resp = rate_youtube_video(fum, Rating::Dislike);
             }
             Action::ClearVote => {
-                let resp = rate_youtube_video(fum, Rating::None);
+                let _resp = rate_youtube_video(fum, Rating::None);
             }
         }
 

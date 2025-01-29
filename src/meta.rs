@@ -57,11 +57,11 @@ impl Default for Meta {
 impl Meta {
     pub fn fetch(player: &Player, picker: &Picker, current: Option<&Self>) -> FumResult<Self> {
         let metadata = Meta::get_metadata(player)?;
-        let track_id = Meta::get_trackid(&metadata)?;
+        let track_id = Meta::get_trackid(&metadata);
         let title = Meta::get_title(&metadata)?;
         let artists = Meta::get_artists(&metadata)?;
         let album = Meta::get_album(&metadata)?;
-        let url = Meta::get_url(&metadata)?;
+        let url = Meta::get_url(&metadata);
         let status = Meta::get_status(player)?;
         let status_icon = Meta::get_status_icon(&status);
         let position = Meta::get_position(player)?;
@@ -83,7 +83,7 @@ impl Meta {
 
         Ok(Self {
             metadata,
-            track_id: Some(track_id),
+            track_id,
             title,
             artists,
             album,
@@ -91,8 +91,8 @@ impl Meta {
             status_icon,
             position,
             length,
-            cover_art: Some(cover_art),
-            url: Some(url),
+            cover_art,
+            url,
             changed,
         })
     }
@@ -138,10 +138,8 @@ impl Meta {
         Ok(metadata)
     }
 
-    pub fn get_trackid(metadata: &Metadata) -> FumResult<TrackID> {
-        let trackid = metadata.track_id().ok_or("Failed to get track_id")?;
-
-        Ok(trackid)
+    pub fn get_trackid(metadata: &Metadata) -> Option<TrackID> {
+        metadata.track_id()
     }
 
     pub fn get_title(metadata: &Metadata) -> FumResult<String> {
@@ -162,13 +160,8 @@ impl Meta {
         Ok(metadata)
     }
 
-    pub fn get_url(metadata: &Metadata) -> FumResult<String> {
-        let url = metadata
-            .url()
-            .map(|t| t.to_string())
-            .ok_or("Failed to get xesam:url")?;
-
-        Ok(url)
+    pub fn get_url(metadata: &Metadata) -> Option<String> {
+        metadata.url().map(|t| t.to_string())
     }
 
     pub fn get_status(player: &Player) -> FumResult<PlaybackStatus> {
@@ -241,16 +234,18 @@ impl Meta {
         metadata: &Metadata,
         picker: &Picker,
         current: Option<&Meta>,
-    ) -> FumResult<CoverArt> {
-        let art_url = metadata
-            .get("mpris:artUrl")
-            .ok_or("Failed to get mpris:artUrl")?;
+    ) -> FumResult<Option<CoverArt>> {
+        let art_url = if let Some(url) = metadata.get("mpris:artUrl") {
+            url
+        } else {
+            return Ok(None);
+        };
 
         if let mpris::MetadataValue::String(art_url) = art_url {
             if let Some(current) = &current {
                 if let Some(current_art) = &current.cover_art {
                     if current_art.url == *art_url {
-                        return Ok(current_art.clone());
+                        return Ok(Some(current_art.clone()));
                     }
                 }
             }
@@ -271,10 +266,10 @@ impl Meta {
                     .decode()
                     .map_err(|_| "Failed to decode image".to_string())?;
 
-                return Ok(CoverArt {
+                return Ok(Some(CoverArt {
                     url: art_url.to_string(),
                     image: picker.new_resize_protocol(cover_art),
-                });
+                }));
             }
 
             // Handle base64
@@ -294,10 +289,10 @@ impl Meta {
                     .decode()
                     .map_err(|_| "Failed to decode image".to_string())?;
 
-                return Ok(CoverArt {
+                return Ok(Some(CoverArt {
                     url: art_url.to_string(),
                     image: picker.new_resize_protocol(cover_art),
-                });
+                }));
             }
 
             let client = reqwest::blocking::Client::new();
@@ -317,10 +312,10 @@ impl Meta {
                 .decode()
                 .map_err(|_| "Failed to decode image".to_string())?;
 
-            return Ok(CoverArt {
+            return Ok(Some(CoverArt {
                 url: art_url.to_string(),
                 image: picker.new_resize_protocol(cover_art),
-            });
+            }));
         }
 
         Err(Box::new(io::Error::new(

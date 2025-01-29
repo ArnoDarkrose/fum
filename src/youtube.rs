@@ -1,3 +1,4 @@
+use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -98,6 +99,10 @@ async fn get_tokens(code: String) {
     .as_secs();
 
     let base_path = expanduser("~/.config/fum").expect("fum config dir not found");
+
+    if !fs::exists(&base_path).expect("could not check path existance") {
+        fs::create_dir_all(&base_path).expect("could not create directory");
+    }
 
     fn save_data<T: std::fmt::Display + Send + Sync + 'static>(
         set: &mut JoinSet<()>,
@@ -213,7 +218,7 @@ struct RefreshTokenQuery {
 }
 
 #[derive(Debug)]
-pub struct YoutubeClient {
+pub struct YouTubeClient {
     client: Client,
     refresh_token: String,
     expiration_date: SystemTime,
@@ -228,7 +233,7 @@ pub enum YouTubeAction {
     },
 }
 
-impl YoutubeClient {
+impl YouTubeClient {
     async fn ensure_relevance(&mut self) {
         match self.expiration_date.elapsed() {
             // access_code has already expired
@@ -262,6 +267,10 @@ impl YoutubeClient {
         fn read_data(filename: &'static str, mut path: PathBuf) -> String {
             path.push(filename);
 
+            if !fs::exists(&path).expect("failed to look up path existance") {
+                panic!("You need to authorize first");
+            }
+
             let mut fd = std::fs::File::open(path).expect("failed to open file");
 
             let mut buf = String::new();
@@ -272,6 +281,10 @@ impl YoutubeClient {
         }
 
         let base_path = expanduser("~/.config/fum").expect("failed to find fum config path");
+
+        if !fs::exists(&base_path).expect("failed to check path existance") {
+            fs::create_dir_all(&base_path).expect("failed to create fum config directory");
+        }
 
         let expiration_date = read_data("access_token_expiration_date", base_path.clone());
         let expiration_date: u64 = expiration_date
@@ -409,7 +422,7 @@ impl YoutubeClient {
 
         self.client = client;
 
-        tokio::spawn(YoutubeClient::save_data(
+        tokio::spawn(YouTubeClient::save_data(
             access_token,
             self.refresh_token.clone(),
             self.expiration_date
@@ -435,7 +448,7 @@ mod test {
         let mut token = String::new();
         fd.read_to_string(&mut token).unwrap();
 
-        let client_handle = YoutubeClient::get_handle();
+        let client_handle = YouTubeClient::get_handle();
 
         let (sender, receiver) = oneshot::channel();
         client_handle
@@ -453,7 +466,7 @@ mod test {
 
     #[tokio::test]
     async fn test_refresh_token() {
-        let mut client = YoutubeClient::new();
+        let mut client = YouTubeClient::new();
 
         println!("{client:#?}");
 
