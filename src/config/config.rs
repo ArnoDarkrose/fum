@@ -86,6 +86,9 @@ pub struct Config {
 
     #[serde(skip)]
     pub authorize: bool,
+
+    #[serde(skip)]
+    pub log: bool,
 }
 
 impl Default for Config {
@@ -103,6 +106,7 @@ impl Default for Config {
             fg: fg(),
             layout: layout(),
             authorize: false,
+            log: false,
         }
     }
 }

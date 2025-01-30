@@ -14,6 +14,7 @@ use ratatui::{prelude::CrosstermBackend, Terminal};
 use ratatui_image::picker::Picker;
 
 use tokio::sync::mpsc;
+use tracing::instrument;
 
 use crate::{
     action::Action,
@@ -40,7 +41,10 @@ pub struct Fum<'a> {
 }
 
 impl<'a> Fum<'a> {
+    #[instrument(level = "trace")]
     pub fn new(config: &'a Config) -> FumResult<Self> {
+        tracing::trace!("entered Fum::new");
+
         let player = Meta::get_player(&config).ok();
 
         let picker = Picker::from_query_stdio()?;

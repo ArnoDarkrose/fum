@@ -32,6 +32,9 @@ struct FumCli {
 
     #[arg(long)]
     authorize: bool,
+
+    #[arg(long)]
+    log: bool,
 }
 
 pub fn run() -> FumResult<Config> {
@@ -59,6 +62,10 @@ pub fn run() -> FumResult<Config> {
 
     if fum_cli.authorize {
         config.authorize = true;
+    }
+
+    if fum_cli.log {
+        config.log = true;
     }
 
     Ok(config)

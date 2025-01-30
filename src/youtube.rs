@@ -15,6 +15,9 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_tracing::TracingMiddleware;
+
 const AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const CLIENT_ID: &str = "201989884872-lh4t6bs3a35ed9gug7v1njgn752igpbr.apps.googleusercontent.com";
 const CLIENT_SECRET: &str = "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";
