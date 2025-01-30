@@ -400,6 +400,7 @@ impl YouTubeClient {
         set.join_all().await;
     }
 
+    #[instrument(level = "debug")]
     pub async fn refresh_tokens(&mut self) {
         let resp = self
             .client
@@ -414,10 +415,14 @@ impl YouTubeClient {
             .await
             .expect("failed to send refresh token request");
 
+        tracing::debug!("got response: {resp:#?}");
+
         let resp: ExchangeTokensResponse = resp
             .json()
             .await
             .expect("error while getting response for refreshing tokens");
+
+        tracing::debug!("got response json body: {resp:#?}");
 
         let access_token = resp.access_token;
 
