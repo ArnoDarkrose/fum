@@ -10,10 +10,22 @@ use crate::{
 
 use super::{
     defaults::{
-        align, bg, direction, fg, flex, height, keybinds, layout, players, use_active_player, width,
+        align, bg, direction, fg, flex, height, keybinds, layout, log, players, use_active_player,
+        width,
     },
     keybind::Keybind,
 };
+
+#[derive(Debug, Clone, Copy, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "snake_case")]
+pub enum LogLevel {
+    None,
+    Info,
+    Debug,
+    Warn,
+    Error,
+    Trace,
+}
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -87,8 +99,8 @@ pub struct Config {
     #[serde(skip)]
     pub authorize: bool,
 
-    #[serde(skip)]
-    pub log: bool,
+    #[serde(default = "log")]
+    pub log: LogLevel,
 }
 
 impl Default for Config {
@@ -106,7 +118,7 @@ impl Default for Config {
             fg: fg(),
             layout: layout(),
             authorize: false,
-            log: false,
+            log: LogLevel::None,
         }
     }
 }

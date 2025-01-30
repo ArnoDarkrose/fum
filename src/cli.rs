@@ -2,7 +2,7 @@ use clap::Parser;
 use expanduser::expanduser;
 
 use crate::{
-    config::{Align, Config},
+    config::{Align, Config, LogLevel},
     fum::FumResult,
 };
 
@@ -33,8 +33,8 @@ struct FumCli {
     #[arg(long)]
     authorize: bool,
 
-    #[arg(long)]
-    log: bool,
+    #[arg(long, value_enum, default_value = "none")]
+    log: LogLevel,
 }
 
 pub fn run() -> FumResult<Config> {
@@ -64,8 +64,11 @@ pub fn run() -> FumResult<Config> {
         config.authorize = true;
     }
 
-    if fum_cli.log {
-        config.log = true;
+    match fum_cli.log {
+        LogLevel::None => {}
+        _ => {
+            config.log = fum_cli.log;
+        }
     }
 
     Ok(config)

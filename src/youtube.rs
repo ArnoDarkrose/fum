@@ -15,8 +15,9 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_middleware::ClientWithMiddleware;
 use reqwest_tracing::TracingMiddleware;
+use tracing::instrument;
 
 const AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const CLIENT_ID: &str = "201989884872-lh4t6bs3a35ed9gug7v1njgn752igpbr.apps.googleusercontent.com";
@@ -47,6 +48,8 @@ async fn callback(
 
     let code = query.code.take().unwrap();
 
+    tracing::debug!("got code from google: {code}");
+
     let rest_tasks = tokio::spawn(get_tokens(code));
 
     let mut sender = app_data.sender.lock().expect("mutex poisoned");
@@ -64,7 +67,7 @@ struct ExchangeTokensQuery {
     redirect_uri: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 struct ExchangeTokensResponse {
     access_token: String,
     expires_in: usize,
@@ -79,6 +82,9 @@ struct ExchangeTokensResponse {
 
 async fn get_tokens(code: String) {
     let client = Client::new();
+    let client = reqwest_middleware::ClientBuilder::new(client)
+        .with(TracingMiddleware::default())
+        .build();
 
     let response = client
         .post(TOKEN_URL)
@@ -94,6 +100,8 @@ async fn get_tokens(code: String) {
         .unwrap();
 
     let response: ExchangeTokensResponse = response.json().await.unwrap();
+
+    tracing::debug!("got response for exchage tokens query: {response:#?}");
 
     let expiration_date = (time::SystemTime::now()
         + time::Duration::from_secs(response.expires_in as u64))
@@ -185,6 +193,7 @@ async fn start_server(sender: Mutex<Option<oneshot::Sender<JoinHandle<()>>>>) {
     .expect("failed to launch server");
 }
 
+#[instrument(level = "debug")]
 pub fn authorize() {
     let rt = Runtime::new().expect("failed to start tokio runtime");
 
@@ -222,7 +231,7 @@ struct RefreshTokenQuery {
 
 #[derive(Debug)]
 pub struct YouTubeClient {
-    client: Client,
+    client: ClientWithMiddleware,
     refresh_token: String,
     expiration_date: SystemTime,
 }
@@ -307,6 +316,10 @@ impl YouTubeClient {
             .default_headers(header_map)
             .build()
             .expect("failed to create http client");
+
+        let client = reqwest_middleware::ClientBuilder::new(client)
+            .with(TracingMiddleware::default())
+            .build();
 
         Self {
             client,
@@ -422,6 +435,9 @@ impl YouTubeClient {
             .default_headers(header_map)
             .build()
             .expect("failed to create http client");
+        let client = reqwest_middleware::ClientBuilder::new(client)
+            .with(TracingMiddleware::default())
+            .build();
 
         self.client = client;
 

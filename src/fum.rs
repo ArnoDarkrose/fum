@@ -94,6 +94,8 @@ impl<'a> Fum<'a> {
         if event::poll(Duration::from_millis(100))? {
             let event = event::read()?;
 
+            tracing::trace!("got event {event:#?}");
+
             match event {
                 Event::Key(key) if key.kind == KeyEventKind::Press => {
                     for (keybind, action) in self.config.keybinds.iter() {

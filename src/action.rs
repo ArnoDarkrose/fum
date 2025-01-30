@@ -170,6 +170,7 @@ fn rate_youtube_video(fum: &mut Fum, rating: Rating) -> Option<reqwest::Response
 }
 
 impl Action {
+    #[tracing::instrument(level = "debug", skip(fum))]
     pub fn run(action: &Action, fum: &mut Fum) -> FumResult<()> {
         match action {
             Action::Quit => fum.exit = true,
@@ -259,13 +260,16 @@ impl Action {
                 // TODO: make a button change depending on the resp value (or I could simply load the rating state
                 // on every update, though this seems to be not a very good idea)
 
-                let _resp = rate_youtube_video(fum, Rating::Like);
+                let resp = rate_youtube_video(fum, Rating::Like);
+                tracing::debug!("got response from youtube: {resp:#?}");
             }
             Action::Downvote => {
-                let _resp = rate_youtube_video(fum, Rating::Dislike);
+                let resp = rate_youtube_video(fum, Rating::Dislike);
+                tracing::debug!("got response from youtube: {resp:#?}");
             }
             Action::ClearVote => {
-                let _resp = rate_youtube_video(fum, Rating::None);
+                let resp = rate_youtube_video(fum, Rating::None);
+                tracing::debug!("got response from youtube: {resp:#?}");
             }
         }
 

@@ -4,6 +4,7 @@ use ratatui::style::Color;
 
 use crate::{
     action::Action,
+    config::LogLevel,
     utils::etc::generate_btn_id,
     widget::{ContainerFlex, CoverArtResize, Direction, FumWidget, LabelAlignment, ProgressOption},
 };
@@ -36,6 +37,9 @@ pub fn bg() -> Color {
 }
 pub fn fg() -> Color {
     Color::Reset
+}
+pub fn log() -> LogLevel {
+    LogLevel::None
 }
 pub fn keybinds() -> HashMap<Keybind, Action> {
     HashMap::from([
